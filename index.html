@@ -34,7 +34,6 @@
   --font-mono:"IBM Plex Mono","SFMono-Regular",Consolas,monospace;
 
   --r-sm:6px; --r-md:12px; --r-lg:18px;
-  --step:3000ms;
 }
 
 *,*::before,*::after{box-sizing:border-box}
@@ -72,7 +71,8 @@ h1{
   line-height:1.02;letter-spacing:.005em;margin:0;text-wrap:balance}
 h1 .h1-accent{color:var(--hot-2)}
 .masthead__note{
-  margin:0;max-width:38ch;font-size:15px;color:var(--text-dim);text-align:right}
+  margin:0;max-width:46ch;font-size:16px;line-height:1.5;color:var(--text-dim);
+  border-left:2px solid var(--line);padding-left:18px}
 .masthead__note strong{color:var(--text);font-weight:600}
 
 /* ============================================================
@@ -87,6 +87,9 @@ h1 .h1-accent{color:var(--hot-2)}
     radial-gradient(closest-side at 50% 50%, rgba(43,45,82,.55), rgba(26,26,46,0) 78%),
     linear-gradient(180deg, rgba(35,37,69,.42), rgba(20,20,39,.42));
   border:1px solid var(--line-soft);border-radius:var(--r-lg);overflow:hidden}
+.stage::after{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:var(--r-lg);
+  box-shadow:inset 0 0 90px 12px rgba(12,12,26,.55)}
 .stage__grid{position:absolute;inset:0;
   background-image:linear-gradient(rgba(58,61,102,.16) 1px,transparent 1px),
                    linear-gradient(90deg,rgba(58,61,102,.16) 1px,transparent 1px);
@@ -101,8 +104,8 @@ h1 .h1-accent{color:var(--hot-2)}
 .pipe-flow.is-shaft{stroke-dasharray:16 14;animation-duration:2.6s;opacity:.75}
 @keyframes flow{to{stroke-dashoffset:-44}}
 .pipe-arrow{stroke:none}
-.grid-line{fill:none;stroke:var(--elec);stroke-width:4;stroke-linecap:round;
-  stroke-dasharray:5 9;animation:flow 1.3s linear infinite}
+.grid-line{fill:none;stroke:var(--elec);stroke-width:5;stroke-linecap:round;
+  stroke-dasharray:6 10;animation:flow 1.3s linear infinite}
 
 .particle{opacity:0;transition:opacity .25s ease}
 .particle.is-on{opacity:1}
@@ -114,7 +117,9 @@ h1 .h1-accent{color:var(--hot-2)}
   display:flex;flex-direction:column;gap:6px;align-items:flex-start;
   padding:12px 13px 13px;margin:0;
   font:inherit;text-align:left;color:var(--text);cursor:pointer;
-  background:linear-gradient(165deg,var(--surface-2),var(--surface));
+  background:
+    linear-gradient(160deg,var(--accent-soft),rgba(0,0,0,0) 62%),
+    linear-gradient(165deg,var(--surface-2),var(--surface));
   border:1px solid var(--line);border-left:3px solid var(--accent);
   border-radius:var(--r-md);
   box-shadow:0 10px 26px rgba(10,10,24,.55);
@@ -136,7 +141,9 @@ h1 .h1-accent{color:var(--hot-2)}
 .station__top{display:flex;align-items:center;gap:8px;width:100%}
 .station__nr{
   font-family:var(--font-mono);font-size:14px;font-weight:600;line-height:1;
-  color:var(--accent);letter-spacing:.02em}
+  color:var(--accent);letter-spacing:.02em;
+  padding:4px 7px;border-radius:5px;
+  background:var(--accent-soft);border:1px solid var(--accent-line)}
 .station__icon{margin-left:auto;width:26px;height:26px;color:var(--accent);flex:none}
 .station__name{
   font-family:var(--font-display);font-weight:600;font-size:19px;line-height:1.08;
@@ -148,7 +155,8 @@ h1 .h1-accent{color:var(--hot-2)}
   position:absolute;transform:translate(-50%,-50%);
   display:flex;flex-direction:column;gap:1px;align-items:center;text-align:center;
   padding:5px 10px;border-radius:999px;pointer-events:none;white-space:nowrap;
-  background:rgba(20,20,39,.86);border:1px solid var(--line-soft)}
+  background:rgba(20,20,39,.9);border:1px solid var(--line-soft);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 .pipe-label__name{
   font-family:var(--font-display);font-size:15px;font-weight:600;line-height:1.05;
   letter-spacing:.06em;text-transform:uppercase;color:var(--tone)}
@@ -164,7 +172,9 @@ h1 .h1-accent{color:var(--hot-2)}
 /* ---- Steuerung in der Mitte ------------------------------ */
 .console{
   position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  display:flex;flex-direction:column;align-items:center;gap:10px;width:min(240px,30%)}
+  display:flex;flex-direction:column;align-items:center;gap:9px;
+  width:min(232px,30%);padding:16px 12px;
+  background:radial-gradient(closest-side at 50% 46%, rgba(18,18,36,.94), rgba(18,18,36,0))}
 .console__ring{position:relative;width:96px;height:96px;flex:none}
 .console__ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .ring-track{fill:none;stroke:var(--line);stroke-width:4}
@@ -176,14 +186,18 @@ h1 .h1-accent{color:var(--hot-2)}
   display:flex;align-items:center;justify-content:center;line-height:0;
   background:linear-gradient(160deg,#ff8f4d,var(--hot));
   border:none;color:#20101f;
-  box-shadow:0 0 34px -8px var(--hot),0 10px 24px rgba(10,10,24,.6);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4), inset 0 0 0 1px rgba(255,255,255,.14),
+             0 0 34px -8px var(--hot), 0 10px 24px rgba(10,10,24,.6);
   transition:transform .2s ease, box-shadow .2s ease}
-.btn-play:hover{transform:translate(-50%,-50%) scale(1.07);box-shadow:0 0 48px -6px var(--hot),0 12px 28px rgba(10,10,24,.6)}
+.btn-play:hover{transform:translate(-50%,-50%) scale(1.07);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4), inset 0 0 0 1px rgba(255,255,255,.14),
+             0 0 48px -6px var(--hot), 0 12px 28px rgba(10,10,24,.6)}
 .btn-play:focus-visible{outline:3px solid var(--text);outline-offset:3px}
 .btn-play svg{display:block;width:30px;height:30px}
 .console__status{
   font-family:var(--font-display);font-size:15px;font-weight:600;letter-spacing:.11em;
-  text-transform:uppercase;color:var(--text-dim);text-align:center;line-height:1.2}
+  text-transform:uppercase;color:var(--step-tone,var(--text-dim));text-align:center;
+  line-height:1.2;transition:color .3s ease}
 .btn-stop{
   font-family:var(--font-display);font-size:14px;font-weight:600;letter-spacing:.1em;
   text-transform:uppercase;color:var(--text-dim);cursor:pointer;
@@ -227,13 +241,16 @@ h1 .h1-accent{color:var(--hot-2)}
 .panel__eyebrow{
   font-family:var(--font-display);font-size:14px;font-weight:600;letter-spacing:.16em;
   text-transform:uppercase;color:var(--accent,var(--text-faint));margin:0 0 6px}
+.panel__head{display:flex;align-items:center;gap:11px;margin:0 0 14px;padding-right:40px}
+.panel__icon{width:30px;height:30px;flex:none;color:var(--accent)}
 .panel h2{
   font-family:var(--font-display);font-weight:700;font-size:29px;line-height:1.05;
-  margin:0 0 14px;padding-right:40px;text-wrap:balance}
+  margin:0;text-wrap:balance}
 .panel p{margin:0 0 12px;font-size:16px;color:var(--text-dim)}
 .panel p:last-of-type{margin-bottom:18px}
 
 .readout{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.readout.is-single .readout__item{flex:0 1 auto;min-width:186px}
 .readout__item{
   flex:1 1 130px;padding:11px 13px;border-radius:var(--r-sm);
   background:rgba(20,20,39,.55);border:1px solid var(--line-soft);
@@ -284,7 +301,19 @@ kbd{
   width:0;display:flex;align-items:center;gap:9px;padding-inline:14px;overflow:hidden;white-space:nowrap;
   transition:width 1.5s cubic-bezier(.22,.75,.3,1)}
 .bar__seg--elec{background:linear-gradient(100deg,#ffe66d,#f5c94a);color:#231f08}
-.bar__seg--waste{background:linear-gradient(100deg,#ff6b35,#95a5a6);color:#1d1512}
+.bar__seg--waste{background:linear-gradient(100deg,#ff6b35,#7d7f96);color:#1d1512}
+.bar__seg--elec{border-right:2px solid rgba(18,18,36,.8)}
+.bar__scale{
+  position:relative;height:21px;margin-top:7px;
+  font-family:var(--font-mono);font-size:14px;color:var(--text-faint);
+  font-variant-numeric:tabular-nums}
+.bar__scale span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+.bar__scale span::before{
+  content:"";position:absolute;top:-7px;left:50%;width:1px;height:5px;background:var(--line)}
+.bar__scale span:first-child{left:0;transform:none}
+.bar__scale span:first-child::before{left:0}
+.bar__scale span:last-child::before{left:auto;right:0}
+.bar__scale span:last-child{right:0;left:auto;transform:none}
 .bar__pct{font-family:var(--font-mono);font-weight:600;font-size:21px;font-variant-numeric:tabular-nums}
 .bar__lbl{font-family:var(--font-display);font-size:16px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
   overflow:hidden;text-overflow:ellipsis}
@@ -307,12 +336,9 @@ kbd{
 @media (max-width:1023px){
   body{padding-inline:20px}
   .layout{grid-template-columns:minmax(0,1fr)}
-  .masthead__note{text-align:left}
   .station{width:clamp(132px,22%,184px)}
   .panel{border-top-width:3px}
-}
-
-@media (max-width:1023px){
+  .masthead__note{max-width:none}
   .pipe-label{padding:4px 8px}
   .pipe-label__name{font-size:14px;letter-spacing:.04em}
   .pipe-label__val{font-size:14px}
@@ -427,6 +453,9 @@ kbd{
         <span class="bar__pct">60 %</span><span class="bar__lbl">Abwärme</span>
       </div>
     </div>
+    <div class="bar__scale" aria-hidden="true">
+      <span>0 %</span><span style="left:40%">40 %</span><span>100 %</span>
+    </div>
     <p class="energy__foot">
       Aus 100 Einheiten Brennstoff werden nur rund 40 Einheiten Strom. Der große Rest verlässt das Kraftwerk
       als <b>Abwärme</b> – vor allem im Kondensator und über den Kühlturm. Das ist kein Baufehler, sondern eine
@@ -451,6 +480,12 @@ kbd{
   var VW = 1000, VH = 800;
   /* Radius je Segment, damit kein Etikett eine Karte oder die Steuerung berührt */
   var LABEL_R = [0.70, 0.62, 0.80, 0.62, 0.70, 0.78];
+
+  /* Akzentfarbe als transparente Flaechen- und Rahmenvariante */
+  function tint(hex, a){
+    var n = parseInt(hex.slice(1), 16);
+    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
+  }
 
   function angle(i){ return (-150 + i * 60) * Math.PI / 180; }
   function sx(i){ return CX + RX * Math.cos(angle(i)); }
@@ -627,6 +662,8 @@ kbd{
     b.className = "station";
     b.dataset.i = String(i);
     b.style.setProperty("--accent", st.accent);
+    b.style.setProperty("--accent-soft", tint(st.accent, .11));
+    b.style.setProperty("--accent-line", tint(st.accent, .34));
     b.style.left = (sx(i) / VW * 100).toFixed(2) + "%";
     b.style.top  = (sy(i) / VH * 100).toFixed(2) + "%";
     b.innerHTML =
@@ -662,7 +699,7 @@ kbd{
      ========================================================== */
   var LEGEND =
     '<p class="panel__eyebrow">Legende</p>' +
-    '<h2>Ein geschlossener Kreislauf</h2>' +
+    '<div class="panel__head"><h2>Ein geschlossener Kreislauf</h2></div>' +
     '<p>Dasselbe Wasser läuft immer wieder im Kreis: Es wird verdampft, treibt die Turbine an, ' +
     'wird abgekühlt und zurückgepumpt. Die Farben zeigen, in welchem Zustand die Energie gerade ist.</p>' +
     '<ul class="legend__list">' +
@@ -688,7 +725,8 @@ kbd{
     var st = STATIONS[i];
     panel.style.setProperty("--accent", st.accent);
 
-    var readout = '<div class="readout">' + st.readout.map(function(r){
+    var readout = '<div class="readout' + (st.readout.length === 1 ? ' is-single' : '') + '">' +
+      st.readout.map(function(r){
       return '<div class="readout__item">' +
                '<div class="readout__num">' + r.v + '<em>' + r.u + '</em></div>' +
                '<span class="readout__cap">' + r.c + '</span>' +
@@ -697,7 +735,10 @@ kbd{
 
     panelBody.innerHTML =
       '<p class="panel__eyebrow">Station ' + st.nr + ' von 06</p>' +
-      '<h2>' + st.name + '</h2>' +
+      '<div class="panel__head">' +
+        '<svg class="panel__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' + st.icon + '</svg>' +
+        '<h2>' + st.name + '</h2>' +
+      '</div>' +
       st.text.map(function(t){ return '<p>' + t + '</p>'; }).join("") +
       readout +
       '<div class="compare">' +
@@ -836,6 +877,7 @@ kbd{
     renderStation(i);
     selected = i;
     statusEl.textContent = "Schritt " + (i + 1) + " von 6";
+    statusEl.style.setProperty("--step-tone", STATIONS[i].accent);
   }
 
   function playIconPause(){
@@ -852,8 +894,7 @@ kbd{
     btnPlayLbl.textContent = "Tour pausieren";
     playIconPause();
     btnStop.hidden = false;
-    if (tour.elapsed === 0 && !tour.outro) enterStep(tour.step);
-    else if (!tour.outro) setActive(tour.step);
+    if (!tour.outro) enterStep(tour.step);
     tour.raf = requestAnimationFrame(frame);
   }
 
@@ -880,6 +921,7 @@ kbd{
     playIconPlay();
     btnStop.hidden = true;
     statusEl.textContent = "Geführte Tour";
+    statusEl.style.removeProperty("--step-tone");
     selected = -1;
     cards.forEach(function(c){ c.removeAttribute("aria-current"); });
     renderLegend();
