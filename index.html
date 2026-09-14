@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>So funktioniert ein thermisches Kraftwerk</title>
+<meta name="description" content="Interaktives Schaubild des Wasser-Dampf-Kreislaufs eines thermischen Kraftwerks: sechs Stationen zum Anklicken, geführte Tour und Energiefluss.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* ============================================================
+   Design-Tokens
+   ============================================================ */
+:root{
+  --bg:#1a1a2e;
+  --bg-deep:#141427;
+  --surface:#232545;
+  --surface-2:#2b2d52;
+  --line:#3a3d66;
+  --line-soft:#30335a;
+  --text:#eef0ff;
+  --text-dim:#a7abd0;
+  --text-faint:#7f83ab;
+
+  --hot:#ff6b35;      /* Feuer, heißer Dampf */
+  --hot-2:#ffb03a;    /* Frischdampf, heißeste Stufe */
+  --cold:#4ecdc4;     /* Wasser, Kühlung */
+  --elec:#ffe66d;     /* elektrische Energie */
+  --mech:#95a5a6;     /* mechanische Energie */
+
+  --font-display:"Barlow Condensed","Arial Narrow",Helvetica,sans-serif;
+  --font-body:"Barlow","Helvetica Neue",Arial,sans-serif;
+  --font-mono:"IBM Plex Mono","SFMono-Regular",Consolas,monospace;
+
+  --r-sm:6px; --r-md:12px; --r-lg:18px;
+  --step:3000ms;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+
+html{-webkit-text-size-adjust:100%}
+
+body{
+  margin:0;
+  padding-block:28px 20px;
+  padding-inline:24px;
+  background:
+    radial-gradient(1100px 620px at 16% -8%, rgba(255,107,53,.13), transparent 62%),
+    radial-gradient(900px 540px at 88% 104%, rgba(78,205,196,.12), transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:16px;
+  line-height:1.55;
+  min-height:100vh;
+}
+
+.page{max-width:1480px;margin-inline:auto;display:flex;flex-direction:column;gap:26px}
+
+/* ============================================================
+   Kopfbereich
+   ============================================================ */
+.masthead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 32px;
+  border-bottom:1px solid var(--line-soft);padding-bottom:18px}
+.masthead__eyebrow{
+  font-family:var(--font-display);font-size:14px;font-weight:600;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--text-faint);margin:0 0 4px}
+h1{
+  font-family:var(--font-display);font-weight:700;font-size:clamp(30px,3.6vw,50px);
+  line-height:1.02;letter-spacing:.005em;margin:0;text-wrap:balance}
+h1 .h1-accent{color:var(--hot-2)}
+.masthead__note{
+  margin:0;max-width:38ch;font-size:15px;color:var(--text-dim);text-align:right}
+.masthead__note strong{color:var(--text);font-weight:600}
+
+/* ============================================================
+   Hauptraster: Bühne + Infopanel
+   ============================================================ */
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 374px;gap:26px;align-items:start}
+
+/* ---- Bühne --------------------------------------------- */
+.stage{
+  position:relative;width:100%;aspect-ratio:5/4;
+  background:
+    radial-gradient(closest-side at 50% 50%, rgba(43,45,82,.55), rgba(26,26,46,0) 78%),
+    linear-gradient(180deg, rgba(35,37,69,.42), rgba(20,20,39,.42));
+  border:1px solid var(--line-soft);border-radius:var(--r-lg);overflow:hidden}
+.stage__grid{position:absolute;inset:0;
+  background-image:linear-gradient(rgba(58,61,102,.16) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(58,61,102,.16) 1px,transparent 1px);
+  background-size:56px 56px;pointer-events:none}
+.pipes{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+
+.pipe-casing{fill:none;stroke:#171831;stroke-width:22;stroke-linecap:round;opacity:.95}
+.pipe-wall{fill:none;stroke:var(--line);stroke-width:20;stroke-linecap:round}
+.pipe-medium{fill:none;stroke-width:11;stroke-linecap:round;opacity:.9}
+.pipe-flow{fill:none;stroke-width:5;stroke-linecap:round;stroke-dasharray:3 19;
+  animation:flow 1.6s linear infinite;opacity:.95}
+.pipe-flow.is-shaft{stroke-dasharray:16 14;animation-duration:2.6s;opacity:.75}
+@keyframes flow{to{stroke-dashoffset:-44}}
+.pipe-arrow{stroke:none}
+.grid-line{fill:none;stroke:var(--elec);stroke-width:4;stroke-linecap:round;
+  stroke-dasharray:5 9;animation:flow 1.3s linear infinite}
+
+.particle{opacity:0;transition:opacity .25s ease}
+.particle.is-on{opacity:1}
+
+/* ---- Stationen ------------------------------------------ */
+.station{
+  position:absolute;transform:translate(-50%,-50%);
+  width:clamp(136px,21.5%,206px);
+  display:flex;flex-direction:column;gap:6px;align-items:flex-start;
+  padding:12px 13px 13px;margin:0;
+  font:inherit;text-align:left;color:var(--text);cursor:pointer;
+  background:linear-gradient(165deg,var(--surface-2),var(--surface));
+  border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:var(--r-md);
+  box-shadow:0 10px 26px rgba(10,10,24,.55);
+  transition:transform .22s cubic-bezier(.2,.7,.3,1), box-shadow .22s ease, border-color .22s ease;
+}
+.station:hover,.station:focus-visible{
+  transform:translate(-50%,-50%) scale(1.06);
+  border-color:var(--accent);
+  box-shadow:0 0 0 1px var(--accent), 0 0 30px -4px var(--accent), 0 14px 30px rgba(10,10,24,.6)}
+.station:focus-visible{outline:3px solid var(--text);outline-offset:3px}
+.station.is-selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 12px 28px rgba(10,10,24,.6)}
+.station.is-active{
+  transform:translate(-50%,-50%) scale(1.08);border-color:var(--accent);
+  animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{
+  0%,100%{box-shadow:0 0 0 1px var(--accent),0 0 26px -6px var(--accent),0 12px 28px rgba(10,10,24,.6)}
+  50%{box-shadow:0 0 0 2px var(--accent),0 0 46px 2px var(--accent),0 12px 28px rgba(10,10,24,.6)}
+}
+.station__top{display:flex;align-items:center;gap:8px;width:100%}
+.station__nr{
+  font-family:var(--font-mono);font-size:14px;font-weight:600;line-height:1;
+  color:var(--accent);letter-spacing:.02em}
+.station__icon{margin-left:auto;width:26px;height:26px;color:var(--accent);flex:none}
+.station__name{
+  font-family:var(--font-display);font-weight:600;font-size:19px;line-height:1.08;
+  letter-spacing:.005em;text-wrap:balance}
+.station__hint{font-size:14px;line-height:1.3;color:var(--text-dim)}
+
+/* ---- Leitungs-Etiketten --------------------------------- */
+.pipe-label{
+  position:absolute;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;gap:1px;align-items:center;text-align:center;
+  padding:5px 10px;border-radius:999px;pointer-events:none;white-space:nowrap;
+  background:rgba(20,20,39,.86);border:1px solid var(--line-soft)}
+.pipe-label__name{
+  font-family:var(--font-display);font-size:15px;font-weight:600;line-height:1.05;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--tone)}
+.pipe-label__val{font-family:var(--font-mono);font-size:14px;line-height:1.15;color:var(--text-dim)}
+.grid-label{
+  position:absolute;transform:translate(-50%,-50%);pointer-events:none;white-space:nowrap;
+  display:flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;
+  background:rgba(20,20,39,.88);border:1px solid rgba(255,230,109,.4)}
+.grid-label span{font-family:var(--font-display);font-size:15px;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--elec)}
+.grid-label svg{width:17px;height:17px;color:var(--elec);flex:none}
+
+/* ---- Steuerung in der Mitte ------------------------------ */
+.console{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;gap:10px;width:min(240px,30%)}
+.console__ring{position:relative;width:96px;height:96px;flex:none}
+.console__ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:var(--line);stroke-width:4}
+.ring-value{fill:none;stroke:var(--hot-2);stroke-width:4;stroke-linecap:round;
+  transition:stroke .3s ease}
+.btn-play{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:72px;height:72px;border-radius:50%;cursor:pointer;padding:0;
+  display:flex;align-items:center;justify-content:center;line-height:0;
+  background:linear-gradient(160deg,#ff8f4d,var(--hot));
+  border:none;color:#20101f;
+  box-shadow:0 0 34px -8px var(--hot),0 10px 24px rgba(10,10,24,.6);
+  transition:transform .2s ease, box-shadow .2s ease}
+.btn-play:hover{transform:translate(-50%,-50%) scale(1.07);box-shadow:0 0 48px -6px var(--hot),0 12px 28px rgba(10,10,24,.6)}
+.btn-play:focus-visible{outline:3px solid var(--text);outline-offset:3px}
+.btn-play svg{display:block;width:30px;height:30px}
+.console__status{
+  font-family:var(--font-display);font-size:15px;font-weight:600;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--text-dim);text-align:center;line-height:1.2}
+.btn-stop{
+  font-family:var(--font-display);font-size:14px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-dim);cursor:pointer;
+  background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 14px;
+  transition:color .2s ease,border-color .2s ease}
+.btn-stop:hover{color:var(--text);border-color:var(--text-faint)}
+.btn-stop:focus-visible{outline:3px solid var(--text);outline-offset:3px}
+.btn-stop[hidden]{display:none}
+
+/* ---- Abschluss-Hinweis der Tour -------------------------- */
+.toast{
+  position:absolute;left:50%;bottom:16px;transform:translate(-50%,14px);
+  max-width:min(520px,86%);text-align:center;
+  padding:12px 20px;border-radius:999px;
+  background:rgba(20,20,39,.94);border:1px solid var(--hot-2);
+  color:var(--text);font-family:var(--font-display);font-size:19px;font-weight:600;
+  letter-spacing:.01em;
+  box-shadow:0 0 36px -10px var(--hot-2);
+  opacity:0;pointer-events:none;transition:opacity .35s ease, transform .35s ease}
+.toast.is-on{opacity:1;transform:translate(-50%,0)}
+
+/* ============================================================
+   Infopanel
+   ============================================================ */
+.panel{
+  position:relative;
+  background:linear-gradient(170deg,var(--surface-2),var(--surface));
+  border:1px solid var(--line);border-top:3px solid var(--accent,var(--line));
+  border-radius:var(--r-lg);padding:22px;
+  box-shadow:0 14px 34px rgba(10,10,24,.45)}
+.panel__close{
+  position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center;cursor:pointer;
+  background:rgba(20,20,39,.6);border:1px solid var(--line);color:var(--text-dim);
+  transition:color .2s ease,border-color .2s ease}
+.panel__close:hover{color:var(--text);border-color:var(--text-faint)}
+.panel__close:focus-visible{outline:3px solid var(--text);outline-offset:2px}
+.panel__close svg{width:15px;height:15px}
+.panel__close[hidden]{display:none}
+
+.panel__eyebrow{
+  font-family:var(--font-display);font-size:14px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--accent,var(--text-faint));margin:0 0 6px}
+.panel h2{
+  font-family:var(--font-display);font-weight:700;font-size:29px;line-height:1.05;
+  margin:0 0 14px;padding-right:40px;text-wrap:balance}
+.panel p{margin:0 0 12px;font-size:16px;color:var(--text-dim)}
+.panel p:last-of-type{margin-bottom:18px}
+
+.readout{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.readout__item{
+  flex:1 1 130px;padding:11px 13px;border-radius:var(--r-sm);
+  background:rgba(20,20,39,.55);border:1px solid var(--line-soft);
+  border-left:2px solid var(--accent)}
+.readout__num{
+  font-family:var(--font-mono);font-weight:600;font-size:27px;line-height:1.05;
+  font-variant-numeric:tabular-nums;color:var(--accent)}
+.readout__num em{font-style:normal;font-size:16px;font-weight:500;margin-left:3px;color:var(--text-dim)}
+.readout__cap{display:block;margin-top:5px;font-size:14px;line-height:1.3;color:var(--text-faint)}
+
+.compare{
+  display:flex;gap:11px;padding:13px 14px;border-radius:var(--r-sm);
+  background:rgba(20,20,39,.5);border:1px dashed var(--line)}
+.compare svg{width:19px;height:19px;flex:none;margin-top:2px;color:var(--accent)}
+.compare p{margin:0;font-size:15px;line-height:1.45;color:var(--text)}
+
+/* Ruhezustand des Panels: Legende */
+.legend__list{list-style:none;margin:0 0 18px;padding:0;display:flex;flex-direction:column;gap:11px}
+.legend__list li{display:flex;gap:11px;align-items:flex-start;font-size:15px;color:var(--text-dim)}
+.legend__swatch{width:15px;height:15px;border-radius:4px;flex:none;margin-top:4px}
+.legend__list b{color:var(--text);font-weight:600}
+.legend__hint{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:12px 13px;border-radius:var(--r-sm);
+  background:rgba(78,205,196,.08);border:1px solid rgba(78,205,196,.28);
+  font-size:15px;color:var(--text)}
+.legend__hint svg{width:19px;height:19px;flex:none;margin-top:2px;color:var(--cold)}
+kbd{
+  font-family:var(--font-mono);font-size:14px;padding:1px 6px;border-radius:4px;
+  background:var(--bg-deep);border:1px solid var(--line);color:var(--text)}
+
+/* ============================================================
+   Energiefluss-Leiste
+   ============================================================ */
+.energy{
+  background:linear-gradient(170deg,var(--surface),rgba(26,26,46,.7));
+  border:1px solid var(--line-soft);border-radius:var(--r-lg);padding:20px 24px 22px}
+.energy__head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 20px;margin-bottom:13px}
+.energy__title{
+  font-family:var(--font-display);font-size:20px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;margin:0}
+.energy__source{font-family:var(--font-mono);font-size:15px;color:var(--text-dim);font-variant-numeric:tabular-nums}
+.energy__source b{color:var(--text);font-weight:600}
+
+.bar{display:flex;height:54px;border-radius:var(--r-sm);overflow:hidden;
+  background:var(--bg-deep);border:1px solid var(--line-soft)}
+.bar__seg{
+  width:0;display:flex;align-items:center;gap:9px;padding-inline:14px;overflow:hidden;white-space:nowrap;
+  transition:width 1.5s cubic-bezier(.22,.75,.3,1)}
+.bar__seg--elec{background:linear-gradient(100deg,#ffe66d,#f5c94a);color:#231f08}
+.bar__seg--waste{background:linear-gradient(100deg,#ff6b35,#95a5a6);color:#1d1512}
+.bar__pct{font-family:var(--font-mono);font-weight:600;font-size:21px;font-variant-numeric:tabular-nums}
+.bar__lbl{font-family:var(--font-display);font-size:16px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  overflow:hidden;text-overflow:ellipsis}
+.energy__foot{margin:11px 0 0;font-size:15px;color:var(--text-dim);max-width:82ch}
+.energy__foot b{color:var(--text);font-weight:600}
+
+/* ============================================================
+   Fußzeile
+   ============================================================ */
+.colophon{
+  font-size:14px;color:var(--text-faint);border-top:1px solid var(--line-soft);
+  padding-top:14px;margin:0}
+
+.visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ============================================================
+   Tablet: einspaltig ab < 1024px
+   ============================================================ */
+@media (max-width:1023px){
+  body{padding-inline:20px}
+  .layout{grid-template-columns:minmax(0,1fr)}
+  .masthead__note{text-align:left}
+  .station{width:clamp(132px,22%,184px)}
+  .panel{border-top-width:3px}
+}
+
+@media (max-width:1023px){
+  .pipe-label{padding:4px 8px}
+  .pipe-label__name{font-size:14px;letter-spacing:.04em}
+  .pipe-label__val{font-size:14px}
+  .grid-label{padding:4px 9px}
+  .grid-label span{font-size:14px}
+  .bar__seg{padding-inline:11px;gap:7px}
+  .bar__pct{font-size:19px}
+  .bar__lbl{font-size:14px}
+}
+
+@media (max-width:767px){
+  .pipe-label{display:none}
+}
+
+/* ============================================================
+   Reduzierte Bewegung
+   ============================================================ */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important}
+  .pipe-flow,.grid-line{animation:none;stroke-dasharray:none;opacity:.6}
+  .station.is-active{animation:none;box-shadow:0 0 0 2px var(--accent)}
+  .particle{display:none}
+  .bar__seg{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div>
+      <p class="masthead__eyebrow">Wasser-Dampf-Kreislauf · 6 Stationen</p>
+      <h1>So funktioniert ein <span class="h1-accent">thermisches&nbsp;Kraftwerk</span></h1>
+    </div>
+    <p class="masthead__note">
+      Ein Kraftwerk verbrennt Brennstoff, um Wasser zu Dampf zu machen. Der Dampf treibt eine Turbine an,
+      die Turbine einen Generator. <strong>Klicke eine Station an</strong> oder starte die geführte Tour.
+    </p>
+  </header>
+
+  <div class="layout">
+
+    <!-- ============ Bühne: Kreislauf ============ -->
+    <section class="stage" id="stage" aria-label="Schaubild des Wasser-Dampf-Kreislaufs">
+      <div class="stage__grid" aria-hidden="true"></div>
+
+      <svg class="pipes" id="pipes" viewBox="0 0 1000 800" aria-hidden="true" focusable="false">
+        <defs id="pipe-defs"></defs>
+        <g id="pipe-layer"></g>
+        <g id="grid-branch">
+          <path class="grid-line" d="M 829 606 L 846 652"></path>
+          <path class="pipe-arrow" fill="#ffe66d" d="M 848 660 l -8 -12 l 14 -1 z"></path>
+        </g>
+        <circle class="particle" id="particle" r="9" cx="-50" cy="-50" fill="#ff6b35"></circle>
+      </svg>
+
+      <!-- Stationen, Leitungs-Etiketten und Partikel werden per Skript erzeugt -->
+
+      <div class="grid-label" style="left:84%;top:87%">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 2 L5 22 M12 2 L19 22 M7.5 9h9 M6.2 15h11.6 M12 2v20"></path>
+        </svg>
+        <span>ins Stromnetz</span>
+      </div>
+
+      <div class="console">
+        <div class="console__ring">
+          <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+            <circle class="ring-track" cx="50" cy="50" r="46"></circle>
+            <circle class="ring-value" id="ring" cx="50" cy="50" r="46"
+                    stroke-dasharray="289.03" stroke-dashoffset="289.03"></circle>
+          </svg>
+          <button class="btn-play" id="btnPlay" type="button" aria-pressed="false">
+            <span class="visually-hidden" id="btnPlayLabel">Geführte Tour starten</span>
+            <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M8 5.2v13.6L19 12z"></path>
+            </svg>
+          </button>
+        </div>
+        <p class="console__status" id="status" aria-live="polite">Geführte Tour</p>
+        <button class="btn-stop" id="btnStop" type="button" hidden>Zurücksetzen</button>
+      </div>
+
+      <p class="toast" id="toast" role="status"></p>
+    </section>
+
+    <!-- ============ Infopanel ============ -->
+    <section class="panel" id="panel" role="region" aria-live="polite" aria-label="Erklärung zur Station">
+      <button class="panel__close" id="panelClose" type="button" hidden>
+        <span class="visually-hidden">Infokasten schließen</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+          <path d="M5 5l14 14M19 5L5 19"></path>
+        </svg>
+      </button>
+      <div id="panelBody"></div>
+    </section>
+  </div>
+
+  <!-- ============ Energiefluss ============ -->
+  <section class="energy" aria-label="Energiefluss und Wirkungsgrad">
+    <div class="energy__head">
+      <h2 class="energy__title">Wohin die Energie geht</h2>
+      <p class="energy__source">Eingesetzt: <b>100 %</b> Brennstoff-Energie</p>
+    </div>
+    <div class="bar" role="img"
+         aria-label="Von 100 Prozent Brennstoff-Energie werden rund 40 Prozent zu elektrischer Energie, rund 60 Prozent gehen als Abwärme verloren.">
+      <div class="bar__seg bar__seg--elec" id="barElec">
+        <span class="bar__pct">40 %</span><span class="bar__lbl">Elektrische Energie</span>
+      </div>
+      <div class="bar__seg bar__seg--waste" id="barWaste">
+        <span class="bar__pct">60 %</span><span class="bar__lbl">Abwärme</span>
+      </div>
+    </div>
+    <p class="energy__foot">
+      Aus 100 Einheiten Brennstoff werden nur rund 40 Einheiten Strom. Der große Rest verlässt das Kraftwerk
+      als <b>Abwärme</b> – vor allem im Kondensator und über den Kühlturm. Das ist kein Baufehler, sondern eine
+      physikalische Grenze: Wärme lässt sich nie vollständig in Bewegung umwandeln. Moderne Gaskraftwerke mit
+      zweitem Dampfkreislauf kommen auf etwa 60 %, Anlagen mit Fernwärme nutzen zusätzlich einen Teil der Abwärme.
+    </p>
+  </section>
+
+  <p class="colophon">Vereinfachtes Schaubild eines Dampfkraftwerks. Alle Zahlenwerte sind typische Größenordnungen eines großen Kohleblocks.</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ==========================================================
+     Farben und Geometrie
+     ========================================================== */
+  var C = { hot:"#ff6b35", hot2:"#ffb03a", cold:"#4ecdc4", elec:"#ffe66d", mech:"#95a5a6" };
+
+  var CX = 500, CY = 400, RX = 380, RY = 280;   // Ellipse im viewBox 1000 x 800
+  var VW = 1000, VH = 800;
+  /* Radius je Segment, damit kein Etikett eine Karte oder die Steuerung berührt */
+  var LABEL_R = [0.70, 0.62, 0.80, 0.62, 0.70, 0.78];
+
+  function angle(i){ return (-150 + i * 60) * Math.PI / 180; }
+  function sx(i){ return CX + RX * Math.cos(angle(i)); }
+  function sy(i){ return CY + RY * Math.sin(angle(i)); }
+
+  /* ==========================================================
+     Inhalte
+     ========================================================== */
+  var ICONS = {
+    flame:'<path d="M12 2.5c.4 3.1-1.3 4.3-2.8 5.8C7.4 10 6 11.6 6 14.2A6 6 0 0 0 18 14.2c0-2.2-1-3.7-2.3-5.3-1-1.2-1.5-2.3-1.5-3.6 0 0-1 1-1.4 2.4-.5-2-.8-3.6-1.3-5.2Z"/><path d="M12 20.5a2.8 2.8 0 0 0 2.8-2.8c0-1.6-1.5-2.3-2.8-4.4-1.3 2.1-2.8 2.8-2.8 4.4A2.8 2.8 0 0 0 12 20.5Z" opacity=".45"/>',
+    coil:'<path d="M3 7h11a3 3 0 0 1 0 6H7a3 3 0 0 0 0 6h14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M6 4.5V2M10 4.5V2M14 4.5V2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+    turbine:'<circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 9V2.5M12 15v6.5M14.6 10.5l5.6-3.2M9.4 13.5l-5.6 3.2M14.6 13.5l5.6 3.2M9.4 10.5 3.8 7.3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+    generator:'<circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12.8 6.4 8.2 13h3.4l-.4 4.6L16 11h-3.5z" fill="currentColor"/>',
+    condenser:'<rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 6v12M12 6v12M16 6v12" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".7"/><path d="M12 20.2c-1 1.1-1.6 1.8-1.6 2.6a1.6 1.6 0 0 0 3.2 0c0-.8-.6-1.5-1.6-2.6Z" fill="currentColor"/>',
+    pump:'<circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9.6 7.6 16.6 12l-7 4.4z" fill="currentColor"/><path d="M12 3.6V1M21.5 12H24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>'
+  };
+
+  var STATIONS = [
+    {
+      nr:"01", name:"Brennkammer & Kessel", hint:"Feuer macht aus Wasser Dampf",
+      accent:C.hot, icon:ICONS.flame,
+      text:[
+        "In der Brennkammer verbrennt Kohle, Gas oder Öl bei weit über 1.000 °C. Die Wände des Kessels bestehen nicht aus Stein, sondern aus tausenden dünnen Rohren, durch die Wasser fließt.",
+        "Die Hitze wandert durch die Rohrwand ins Wasser. Das Wasser verdampft – und weil der Dampf im geschlossenen Rohrsystem nirgendwo hin kann, steigt sein Druck gewaltig an.",
+        "Genau dieser Druck ist später die Kraft, die die Turbine dreht."
+      ],
+      readout:[ {v:"550", u:"°C", c:"Dampftemperatur am Kesselaustritt"},
+                {v:"250", u:"bar", c:"Druck im Kesselrohrsystem"} ],
+      compare:"250 bar entsprechen dem Wasserdruck in 2,5 Kilometern Meerestiefe – tiefer, als jedes bemannte Forschungs-U-Boot normalerweise fährt."
+    },
+    {
+      nr:"02", name:"Überhitzer", hint:"Dampf wird trocken und heißer",
+      accent:C.hot2, icon:ICONS.coil,
+      text:[
+        "Frisch erzeugter Dampf enthält noch feine Wassertröpfchen. Die würden in der Turbine wie ein Sandstrahler wirken und die Schaufeln zerstören.",
+        "Deshalb läuft der Dampf ein zweites Mal durch Rohrschlangen direkt über dem Feuer. Er trocknet vollständig aus und wird noch heißer.",
+        "Es gilt eine einfache Faustregel: Je heißer der Dampf in die Turbine geht, desto mehr Energie lässt sich aus ihm herausholen – der Wirkungsgrad steigt."
+      ],
+      readout:[ {v:"600", u:"°C", c:"Frischdampf-Temperatur vor der Turbine"} ],
+      compare:"Bei 600 °C glüht Stahl bereits dunkelrot. Ein Backofen zu Hause schafft gerade einmal 250 °C – der Überhitzer ist mehr als doppelt so heiß."
+    },
+    {
+      nr:"03", name:"Turbine", hint:"Wärme wird zu Bewegung",
+      accent:C.mech, icon:ICONS.turbine,
+      text:[
+        "Der Frischdampf schießt durch enge Düsen auf tausende gebogene Schaufeln, die wie Windradflügel auf einer langen Welle sitzen.",
+        "Der Dampf drückt die Schaufeln zur Seite und verliert dabei Druck und Temperatur. Aus thermischer Energie wird mechanische Energie – die Welle dreht sich.",
+        "Damit möglichst wenig verloren geht, durchläuft der Dampf mehrere Stufen hintereinander: von der Hochdruck- über die Mitteldruck- bis zur Niederdruckturbine."
+      ],
+      readout:[ {v:"3.000", u:"min⁻¹", c:"Drehzahl der Turbinenwelle"},
+                {v:"600", u:"m/s", c:"Tempo an den Schaufelspitzen"} ],
+      compare:"Die Welle dreht sich 50-mal pro Sekunde – gut doppelt so schnell wie eine Waschmaschine beim Schleudern. Nur wiegt sie statt 70 Kilogramm mehrere hundert Tonnen."
+    },
+    {
+      nr:"04", name:"Generator", hint:"Bewegung wird zu Strom",
+      accent:C.elec, icon:ICONS.generator,
+      text:[
+        "Die Turbinenwelle läuft ohne Umweg direkt in den Generator. Dort dreht sie einen kräftigen Elektromagneten in Spulen aus Kupferdraht.",
+        "Das bewegte Magnetfeld schiebt die Elektronen im Draht an, es entsteht Spannung. Dieses Prinzip heißt Induktion: Aus mechanischer Energie wird elektrische Energie.",
+        "Weil sich die Welle exakt 50-mal pro Sekunde dreht, hat der Strom aus der Steckdose genau 50 Hertz."
+      ],
+      readout:[ {v:"800", u:"MW", c:"elektrische Leistung eines großen Blocks"},
+                {v:"50", u:"Hz", c:"Frequenz im Stromnetz"} ],
+      compare:"800 Megawatt versorgen rechnerisch rund 1,5 Millionen Haushalte – etwa so viele, wie eine Stadt in der Größe von München hat."
+    },
+    {
+      nr:"05", name:"Kondensator", hint:"Dampf wird wieder zu Wasser",
+      accent:C.cold, icon:ICONS.condenser,
+      text:[
+        "Hinter der letzten Turbinenstufe ist der Dampf kraftlos: kaum noch Druck, kaum noch Temperatur. Wegwerfen kann man ihn trotzdem nicht – das Wasser wird gebraucht.",
+        "Im Kondensator strömt er über tausende Rohre, durch die kaltes Kühlwasser aus einem Fluss oder vom Kühlturm fließt. Der Dampf gibt seine Restwärme ab und wird wieder flüssig.",
+        "Dabei schrumpft sein Volumen schlagartig. Es entsteht ein Unterdruck, der den Dampf zusätzlich durch die Turbine saugt."
+      ],
+      readout:[ {v:"30", u:"°C", c:"Temperatur des Kondensats"},
+                {v:"0,05", u:"bar", c:"Unterdruck im Kondensator"} ],
+      compare:"Hier verlässt der größte Teil der Energie das Kraftwerk als Abwärme. Genau das sieht man an den weißen Wolken über den Kühltürmen – das ist kein Rauch, sondern Wasserdampf."
+    },
+    {
+      nr:"06", name:"Speisewasserpumpe", hint:"Der Kreislauf schließt sich",
+      accent:C.cold, icon:ICONS.pump,
+      text:[
+        "Die Pumpe drückt das flüssige Wasser zurück in den Kessel – und zwar gegen die 250 bar, die dort herrschen. Das ist die schwerste Arbeit im ganzen Kreislauf.",
+        "Flüssiges Wasser zu pumpen kostet allerdings viel weniger Energie, als Dampf zu verdichten. Deshalb wird im Kondensator überhaupt erst kondensiert.",
+        "Damit ist der Kreis geschlossen: Es ist immer dasselbe, aufwendig gereinigte Wasser, das wieder und wieder verdampft und kondensiert."
+      ],
+      readout:[ {v:"1.000", u:"t/h", c:"gefördertes Speisewasser"},
+                {v:"25", u:"MW", c:"Antriebsleistung der Pumpe"} ],
+      compare:"Die Pumpe allein braucht so viel Strom wie 10.000 Haushalte. Diese Energie verbraucht das Kraftwerk für sich selbst – sie kommt nie im Netz an."
+    }
+  ];
+
+  /* Leitungen: Segment i führt von Station i zu Station i+1 */
+  var PIPES = [
+    { from:C.hot,  to:C.hot2, dot:C.hot,  name:"Sattdampf",   val:"≈ 550 °C",           tone:C.hot },
+    { from:C.hot2, to:C.hot2, dot:C.hot2, name:"Frischdampf", val:"600 °C · 250 bar",   tone:C.hot2 },
+    { from:C.mech, to:C.mech, dot:C.mech, name:"Welle",       val:"mechanische Energie",tone:C.mech, shaft:true },
+    { from:"#ff8a4c", to:C.cold, dot:"#ff8a4c", name:"Abdampf", val:"aus der Turbine",  tone:"#ff8a4c" },
+    { from:C.cold, to:C.cold, dot:C.cold, name:"Kondensat",   val:"≈ 30 °C",            tone:C.cold },
+    { from:C.cold, to:C.hot,  dot:C.cold, name:"Speisewasser",val:"250 bar",            tone:C.cold }
+  ];
+
+  var NS = "http://www.w3.org/2000/svg";
+  var stage      = document.getElementById("stage");
+  var defs       = document.getElementById("pipe-defs");
+  var pipeLayer  = document.getElementById("pipe-layer");
+  var particle   = document.getElementById("particle");
+  var panel      = document.getElementById("panel");
+  var panelBody  = document.getElementById("panelBody");
+  var panelClose = document.getElementById("panelClose");
+  var btnPlay    = document.getElementById("btnPlay");
+  var btnPlayLbl = document.getElementById("btnPlayLabel");
+  var playIcon   = document.getElementById("playIcon");
+  var btnStop    = document.getElementById("btnStop");
+  var statusEl   = document.getElementById("status");
+  var ring       = document.getElementById("ring");
+  var toast      = document.getElementById("toast");
+
+  var flowPaths = [];   // ein <path> je Segment, dient auch als Bahn für das Partikel
+  var cards     = [];
+
+  /* ==========================================================
+     Rohrleitungen zeichnen
+     ========================================================== */
+  function el(name, attrs){
+    var n = document.createElementNS(NS, name);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+
+  PIPES.forEach(function(p, i){
+    var j  = (i + 1) % 6;
+    var x1 = sx(i), y1 = sy(i), x2 = sx(j), y2 = sy(j);
+    var d  = "M " + x1.toFixed(1) + " " + y1.toFixed(1) +
+             " A " + RX + " " + RY + " 0 0 1 " + x2.toFixed(1) + " " + y2.toFixed(1);
+
+    var grad = el("linearGradient", {
+      id:"g" + i, gradientUnits:"userSpaceOnUse", x1:x1, y1:y1, x2:x2, y2:y2
+    });
+    grad.appendChild(el("stop", { offset:"0%",   "stop-color":p.from }));
+    grad.appendChild(el("stop", { offset:"100%", "stop-color":p.to }));
+    defs.appendChild(grad);
+
+    pipeLayer.appendChild(el("path", { class:"pipe-casing", d:d }));
+    pipeLayer.appendChild(el("path", { class:"pipe-wall",   d:d }));
+    pipeLayer.appendChild(el("path", { class:"pipe-medium", d:d, stroke:"url(#g" + i + ")" }));
+
+    var flow = el("path", {
+      class:"pipe-flow" + (p.shaft ? " is-shaft" : ""),
+      d:d, stroke:"url(#g" + i + ")"
+    });
+    flow.style.animationDelay = (-i * 0.22) + "s";
+    pipeLayer.appendChild(flow);
+    flowPaths.push(flow);
+
+    /* Richtungspfeil auf der Mitte des Bogens */
+    var len = flow.getTotalLength();
+    var a = flow.getPointAtLength(len / 2 - 4);
+    var b = flow.getPointAtLength(len / 2 + 4);
+    var rot = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+    var head = el("path", {
+      class:"pipe-arrow", fill:p.dot,
+      d:"M 11 0 L -7 8 L -7 -8 Z",
+      transform:"translate(" + b.x.toFixed(1) + "," + b.y.toFixed(1) + ") rotate(" + rot.toFixed(1) + ")"
+    });
+    pipeLayer.appendChild(head);
+  });
+
+  /* ==========================================================
+     Stationskarten und Leitungs-Etiketten
+     ========================================================== */
+  STATIONS.forEach(function(st, i){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "station";
+    b.dataset.i = String(i);
+    b.style.setProperty("--accent", st.accent);
+    b.style.left = (sx(i) / VW * 100).toFixed(2) + "%";
+    b.style.top  = (sy(i) / VH * 100).toFixed(2) + "%";
+    b.innerHTML =
+      '<span class="station__top">' +
+        '<span class="station__nr">' + st.nr + '</span>' +
+        '<svg class="station__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' + st.icon + '</svg>' +
+      '</span>' +
+      '<span class="station__name">' + st.name + '</span>' +
+      '<span class="station__hint">' + st.hint + '</span>';
+    b.addEventListener("click", function(){ selectStation(i, true); });
+    stage.appendChild(b);
+    cards.push(b);
+  });
+
+  PIPES.forEach(function(p, i){
+    var a  = angle(i) + 30 * Math.PI / 180;
+    var r  = LABEL_R[i];
+    var lx = CX + r * RX * Math.cos(a);
+    var ly = CY + r * RY * Math.sin(a);
+    var d  = document.createElement("div");
+    d.className = "pipe-label";
+    d.style.setProperty("--tone", p.tone);
+    d.style.left = (lx / VW * 100).toFixed(2) + "%";
+    d.style.top  = (ly / VH * 100).toFixed(2) + "%";
+    d.setAttribute("aria-hidden", "true");
+    d.innerHTML = '<span class="pipe-label__name">' + p.name + '</span>' +
+                  '<span class="pipe-label__val">' + p.val + '</span>';
+    stage.appendChild(d);
+  });
+
+  /* ==========================================================
+     Infopanel
+     ========================================================== */
+  var LEGEND =
+    '<p class="panel__eyebrow">Legende</p>' +
+    '<h2>Ein geschlossener Kreislauf</h2>' +
+    '<p>Dasselbe Wasser läuft immer wieder im Kreis: Es wird verdampft, treibt die Turbine an, ' +
+    'wird abgekühlt und zurückgepumpt. Die Farben zeigen, in welchem Zustand die Energie gerade ist.</p>' +
+    '<ul class="legend__list">' +
+      '<li><span class="legend__swatch" style="background:#ff6b35"></span><span><b>Rot &amp; Orange</b> – Feuer und heißer Dampf. Je heller, desto heißer.</span></li>' +
+      '<li><span class="legend__swatch" style="background:#4ecdc4"></span><span><b>Blau</b> – flüssiges Wasser, Kühlung, Kondensat.</span></li>' +
+      '<li><span class="legend__swatch" style="background:#95a5a6"></span><span><b>Grau</b> – mechanische Energie: die drehende Welle.</span></li>' +
+      '<li><span class="legend__swatch" style="background:#ffe66d"></span><span><b>Gelb</b> – elektrische Energie, die ins Stromnetz geht.</span></li>' +
+    '</ul>' +
+    '<p class="legend__hint">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">' +
+      '<circle cx="12" cy="12" r="9.2"/><path d="M12 11v5.5M12 7.6v.1"/></svg>' +
+      '<span>Station anklicken für Details – oder mit <kbd>Tab</kbd> ansteuern und mit <kbd>Enter</kbd> öffnen. ' +
+      '<kbd>Esc</kbd> schließt wieder.</span>' +
+    '</p>';
+
+  function renderLegend(){
+    panel.style.setProperty("--accent", "var(--line)");
+    panelBody.innerHTML = LEGEND;
+    panelClose.hidden = true;
+  }
+
+  function renderStation(i){
+    var st = STATIONS[i];
+    panel.style.setProperty("--accent", st.accent);
+
+    var readout = '<div class="readout">' + st.readout.map(function(r){
+      return '<div class="readout__item">' +
+               '<div class="readout__num">' + r.v + '<em>' + r.u + '</em></div>' +
+               '<span class="readout__cap">' + r.c + '</span>' +
+             '</div>';
+    }).join("") + '</div>';
+
+    panelBody.innerHTML =
+      '<p class="panel__eyebrow">Station ' + st.nr + ' von 06</p>' +
+      '<h2>' + st.name + '</h2>' +
+      st.text.map(function(t){ return '<p>' + t + '</p>'; }).join("") +
+      readout +
+      '<div class="compare">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M12 3v3M12 6a6 6 0 0 1 3.6 10.8V19a1.6 1.6 0 0 1-1.6 1.6h-4A1.6 1.6 0 0 1 8.4 19v-2.2A6 6 0 0 1 12 6ZM9.4 22h5.2"/></svg>' +
+        '<p>' + st.compare + '</p>' +
+      '</div>';
+    panelClose.hidden = false;
+  }
+
+  var selected = -1;
+  var lastTrigger = null;
+
+  function selectStation(i, fromUser){
+    if (fromUser && tour.running) pauseTour();
+    selected = i;
+    cards.forEach(function(c, k){
+      c.classList.toggle("is-selected", k === i && !tour.running);
+      if (k === i) c.setAttribute("aria-current","true"); else c.removeAttribute("aria-current");
+    });
+    if (fromUser) lastTrigger = cards[i];
+    renderStation(i);
+  }
+
+  function closePanel(){
+    if (selected < 0) return;
+    selected = -1;
+    cards.forEach(function(c){ c.classList.remove("is-selected"); c.removeAttribute("aria-current"); });
+    renderLegend();
+    if (lastTrigger) { lastTrigger.focus(); lastTrigger = null; }
+  }
+
+  panelClose.addEventListener("click", closePanel);
+
+  document.addEventListener("pointerdown", function(e){
+    if (selected < 0) return;
+    if (panel.contains(e.target)) return;
+    if (e.target.closest && e.target.closest(".station")) return;
+    if (e.target.closest && e.target.closest(".console")) return;
+    closePanel();
+  });
+
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape" && selected >= 0) { closePanel(); }
+  });
+
+  /* ==========================================================
+     Geführte Tour
+     ========================================================== */
+  var STEP_MS     = 3000;
+  var PARTICLE_MS = 1300;
+  var OUTRO_MS    = 3600;
+  var RING_LEN    = 2 * Math.PI * 46;
+
+  var tour = { running:false, step:0, elapsed:0, t0:0, outro:false, raf:0 };
+
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  function setActive(i){
+    cards.forEach(function(c, k){
+      c.classList.toggle("is-active", k === i);
+      c.classList.remove("is-selected");
+    });
+  }
+
+  function clearActive(){
+    cards.forEach(function(c){ c.classList.remove("is-active"); });
+  }
+
+  function showParticle(seg, t){
+    if (reduce.matches) return;
+    var path = flowPaths[seg];
+    var len = path.getTotalLength();
+    var pt = path.getPointAtLength(len * t);
+    particle.setAttribute("cx", pt.x);
+    particle.setAttribute("cy", pt.y);
+    particle.setAttribute("fill", PIPES[seg].dot);
+    particle.style.filter = "drop-shadow(0 0 8px " + PIPES[seg].dot + ")";
+    particle.classList.add("is-on");
+  }
+
+  function hideParticle(){ particle.classList.remove("is-on"); }
+
+  function setRing(frac, color){
+    ring.setAttribute("stroke-dashoffset", String(RING_LEN * (1 - frac)));
+    ring.style.stroke = color;
+  }
+
+  function frame(now){
+    if (!tour.running) return;
+    tour.elapsed = now - tour.t0;
+
+    if (tour.outro){
+      setRing(Math.min(1, tour.elapsed / OUTRO_MS), C.hot2);
+      if (tour.elapsed >= OUTRO_MS){
+        toast.classList.remove("is-on");
+        tour.outro = false;
+        tour.step = 0;
+        tour.t0 = now;
+        enterStep(0);
+      }
+      tour.raf = requestAnimationFrame(frame);
+      return;
+    }
+
+    var frac = Math.min(1, tour.elapsed / STEP_MS);
+    setRing(frac, STATIONS[tour.step].accent);
+
+    var pStart = STEP_MS - PARTICLE_MS;
+    if (tour.elapsed > pStart){
+      showParticle(tour.step, Math.min(1, (tour.elapsed - pStart) / PARTICLE_MS));
+    } else {
+      hideParticle();
+    }
+
+    if (tour.elapsed >= STEP_MS){
+      hideParticle();
+      if (tour.step === STATIONS.length - 1){
+        tour.outro = true;
+        tour.t0 = now;
+        clearActive();
+        statusEl.textContent = "Kreislauf komplett";
+        toast.textContent = "Der Kreislauf beginnt von vorn – 24 Stunden am Tag, 365 Tage im Jahr.";
+        toast.classList.add("is-on");
+      } else {
+        tour.step += 1;
+        tour.t0 = now;
+        enterStep(tour.step);
+      }
+    }
+    tour.raf = requestAnimationFrame(frame);
+  }
+
+  function enterStep(i){
+    setActive(i);
+    renderStation(i);
+    selected = i;
+    statusEl.textContent = "Schritt " + (i + 1) + " von 6";
+  }
+
+  function playIconPause(){
+    playIcon.innerHTML = '<path d="M7.5 5h3.2v14H7.5zM13.3 5h3.2v14h-3.2z"/>';
+  }
+  function playIconPlay(){
+    playIcon.innerHTML = '<path d="M8 5.2v13.6L19 12z"/>';
+  }
+
+  function startTour(){
+    tour.running = true;
+    tour.t0 = performance.now() - tour.elapsed;
+    btnPlay.setAttribute("aria-pressed", "true");
+    btnPlayLbl.textContent = "Tour pausieren";
+    playIconPause();
+    btnStop.hidden = false;
+    if (tour.elapsed === 0 && !tour.outro) enterStep(tour.step);
+    else if (!tour.outro) setActive(tour.step);
+    tour.raf = requestAnimationFrame(frame);
+  }
+
+  function pauseTour(){
+    tour.running = false;
+    cancelAnimationFrame(tour.raf);
+    hideParticle();
+    btnPlay.setAttribute("aria-pressed", "false");
+    btnPlayLbl.textContent = "Tour fortsetzen";
+    playIconPlay();
+    statusEl.textContent = "Pausiert";
+  }
+
+  function stopTour(){
+    tour.running = false;
+    cancelAnimationFrame(tour.raf);
+    tour.step = 0; tour.elapsed = 0; tour.outro = false;
+    hideParticle();
+    clearActive();
+    toast.classList.remove("is-on");
+    setRing(0, C.hot2);
+    btnPlay.setAttribute("aria-pressed", "false");
+    btnPlayLbl.textContent = "Geführte Tour starten";
+    playIconPlay();
+    btnStop.hidden = true;
+    statusEl.textContent = "Geführte Tour";
+    selected = -1;
+    cards.forEach(function(c){ c.removeAttribute("aria-current"); });
+    renderLegend();
+  }
+
+  btnPlay.addEventListener("click", function(){
+    if (tour.running) pauseTour(); else startTour();
+  });
+  btnStop.addEventListener("click", stopTour);
+
+  /* ==========================================================
+     Start
+     ========================================================== */
+  renderLegend();
+  setRing(0, C.hot2);
+
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      document.getElementById("barElec").style.width  = "40%";
+      document.getElementById("barWaste").style.width = "60%";
+    });
+  });
+})();
+</script>
+</body>
+</html>
